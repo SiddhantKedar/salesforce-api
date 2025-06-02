@@ -34,7 +34,7 @@ def search():
     text = request.json.get("text", "")
     attribute = data.get("attribute")
     payload = {
-        text: text,
+        "text": text,
         "language": "en-US"
     }
 
@@ -71,6 +71,7 @@ def view():
         return html
     except Exception as e:
         return f"<h2> Error fetching document :</h2><pre>{str(e)}</pre>", 500
+
 
 if __name__ == "__main__":
     app.run(debug=True)
