@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Search API</title>
+    <style>
+        .search-container {
+            max-width: 400px;
+            position: relative;
+        }
+
+        ul.dropdown {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            position: absolute;
+            width: 100%;
+            border: 1px solid #ccc;
+            background: white;
+            z-index: 10;
+        }
+
+        ul.dropdown li {
+            padding: 8px;
+            cursor: pointer;
+        }
+
+        ul.dropdown li:hover {
+            background-color: #f0f0f0;
+        }
+
+        .result {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Search API</h1>
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="query">
+        <button onclick="submitQuery()">Search</button>
+        <ul id="dropdown" class="dropdown"></ul>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        let debounceTimer;
+
+        const searchInput = document.getElementById("searchInput");
+        const dropdown = document.getElementById("dropdown");
+        const results = document.getElementById("results");
+
+        searchInput.addEventListener("input", () => {
+            const query = searchInput.value.trim();
+
+            clearTimeout(debounceTimer);
+            if (query.length < 3) {
+                dropdown.innerHTML = "";
+                return;
+            }
+
+            debounceTimer = setTimeout(() => fetchSuggestions(query), 300);
+        });
+
+        async function fetchSuggestions(query) {
+            try {
+                const res = await fetch("/api/suggest", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ query })
+                });
+
+                const data = await res.json();
+                dropdown.innerHTML = "";
+
+                if (Array.isArray(data)) {
+                    data.forEach(item => {
+                        const li = document.createElement("li");
+                        li.textContent = item.label;
+                        li.onclick = () => {
+                            searchInput.value = item.label;
+                            dropdown.innerHTML = "";
+                            fetchResults(item.label, item.attribute);
+                        };
+                        dropdown.appendChild(li);
+                    });
+                }
+            } catch (err) {
+                console.error("Suggest API Error:", err);
+            }
+        }
+
+        function submitQuery() {
+            dropdown.innerHTML = "";
+            const query = searchInput.value.trim();
+            if (query.length >= 3) {
+                fetchResults(query);
+            }
+        }
+
+        async function fetchResults(text, attribute = null) {
+            results.innerHTML = "Loading...";
+            try {
+                const body = attribute ? {text, attribute} : {text};
+                const res = await fetch("/api/search", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body)
+                });
+
+                const data = await res.json();
+
+                if (Array.isArray(data.results)) {
+                    results.innerHTML = data.results.slice(0, 5).map(item =>
+                        `<div class="result" onclick="openDownload('${item.id}')">
+                            <strong>${item.title}</strong>
+                            <p>${item.body}</p>
+                        </div>`).join("");
+                } else {
+                    results.innerHTML = "<p>No results found.</p>";
+                }
+            } catch (err) {
+                console.error("Search API Error:", err);
+                results.innerHTML = "<p style='color:red;'>Error fetching results.</p>";
+            }
+
+        }
+        function openDownload(id) {
+                window.location.href = `/view?id=${encodeURIComponent(id)}`;
+                console.log("Clicked:", id);
+
+            }
+    </script>
+</body>
+</html>
