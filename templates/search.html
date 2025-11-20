@@ -225,6 +225,14 @@
             }
         });
 
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                dropdown.classList.remove("show");
+                dropdown.style.display = "none";
+            }
+        });
+
+
         searchInput.addEventListener("input", () => {
             const query = searchInput.value.trim();
 
