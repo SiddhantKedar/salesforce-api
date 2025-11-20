@@ -23,7 +23,7 @@ def suggest():
         "Content-Type": "application/json"
     }
     try:
-        res = requests.post(url, headers=headers, json={"query": query, "limit": 5})
+        res = requests.post(url, headers=headers, json={"query": query})
         return jsonify(res.json())
     except Exception as e:
         return jsonify({"error": str(e)}), 500

@@ -173,6 +173,15 @@
             color: #002f57;
         }
 
+        .no-results {
+            text-align: center;
+            color: #6b7280; /* soft gray */
+            font-size: 1.1em;
+            font-weight: 500;
+            padding: 30px 0;
+        }
+
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -204,10 +213,17 @@
 
     <script>
         let debounceTimer;
-
         const searchInput = document.getElementById("searchInput");
         const dropdown = document.getElementById("dropdown");
         const results = document.getElementById("results");
+
+        // ENTER key triggers search
+        searchInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                dropdown.classList.remove("show");
+                submitQuery();
+            }
+        });
 
         searchInput.addEventListener("input", () => {
             const query = searchInput.value.trim();
@@ -235,13 +251,11 @@
                 const data = await res.json();
                 dropdown.innerHTML = "";
 
-                // Data is already an array (we saw this in your console)
                 if (!Array.isArray(data) || data.length === 0) {
                     dropdown.classList.remove("show");
                     return;
                 }
 
-                // Show dropdown
                 dropdown.classList.add("show");
 
                 data.forEach(item => {
@@ -264,6 +278,7 @@
         function submitQuery() {
             dropdown.classList.remove("show");
             dropdown.innerHTML = "";
+
             const query = searchInput.value.trim();
             if (query.length >= 3) fetchResults(query);
         }
@@ -282,7 +297,7 @@
 
                 const data = await res.json();
 
-                if (Array.isArray(data.results)) {
+                if (Array.isArray(data.results) && data.results.length > 0) {
                     results.innerHTML = data.results
                         .slice(0, 6)
                         .map(item => `
@@ -296,13 +311,13 @@
                                     class="view-link"
                                     onclick="event.stopPropagation();"
                                 >
-                                    View Document
+                                    🔗 View Document
                                 </a>
                             </div>
                         `)
                         .join("");
                 } else {
-                    results.innerHTML = "<p>No results found.</p>";
+                    results.innerHTML = `<p class="no-results">No results found.</p>`;
                 }
             } catch (err) {
                 console.error("Search API Error:", err);
@@ -314,6 +329,7 @@
         function openDownload(id) {
             window.open(`/view?id=${id}`, "_blank");
         }
+
     </script>
 
 </body>
