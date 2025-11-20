@@ -158,6 +158,21 @@
             margin-bottom: 8px;
         }
 
+        .view-link {
+            display: inline-block;
+            margin-top: 10px;
+            font-size: 0.95em;
+            color: #004A80;
+            font-weight: 600;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .view-link:hover {
+            text-decoration: underline;
+            color: #002f57;
+        }
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -274,6 +289,15 @@
                             <div class="result" onclick="openDownload('${encodeURIComponent(item.id)}')">
                                 <strong>${item.title}</strong>
                                 <p>${item.body.substring(0, 200)}...</p>
+
+                                <a 
+                                    href="/view?id=${encodeURIComponent(item.id)}"
+                                    target="_blank"
+                                    class="view-link"
+                                    onclick="event.stopPropagation();"
+                                >
+                                    View Document
+                                </a>
                             </div>
                         `)
                         .join("");
