@@ -1,126 +1,191 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Search API</title>
+    <title>SMA Search</title>
+
     <style>
         body {
-        margin: 0;
-        font-family: sans-serif;
+            margin: 0;
+            font-family: "Inter", sans-serif;
+            background: #f4f7fa;
         }
 
         .header {
-            background-color: #004A80; /* dark blue */
-            padding: 40px 0;
+            background-color: #004A80;
+            padding: 50px 0 60px 0;
             text-align: center;
             color: white;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.2);
+            position: relative;
+            z-index: 1;
         }
+
 
         .header h1 {
             margin-bottom: 30px;
-            font-size: 2.5em;
+            font-size: 2.7em;
+            font-weight: 600;
+        }
+
+        .search-wrapper {
+            max-width: 700px;
+            margin: 0 auto;
+            position: relative;
+            animation: fadeIn 0.4s ease-in-out;
         }
 
         .search-box {
             display: flex;
-            justify-content: center;
             align-items: center;
-            max-width: 700px;
-            margin: 0 auto;
-            border-radius: 10px;
+            background: white;
+            border-radius: 50px;
             overflow: hidden;
-            background-color: white;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
         }
 
-        .search-box input[type="text"] {
+        .search-box:focus-within {
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+        }
+
+        .search-box input {
             flex: 1;
-            padding: 15px 20px;
-            font-size: 1em;
+            padding: 18px 22px;
+            font-size: 1.1em;
             border: none;
+            background: #f7f9fc;
             outline: none;
-            background-color: #f9f9f9;
-            border-radius: 0;
+        }
+        .search-box button {
+            background: linear-gradient(145deg, #d83238, #b51c22);
+            border: none;
+            width: 50px;
+            height: 50px;
+            margin-right: 4px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+            transition: all 0.3s ease;
         }
 
-        .search-box button {
-            background-color: #D01F27; /* red */
-            border: none;
-            padding: 0 35px;
-            cursor: pointer;   
+        .search-box button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.35);
         }
 
         .search-box button svg {
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             fill: white;
         }
 
-        .dropdown, .result {
-            max-width: 700px;
-            margin: 10px auto;
-        }
-        .search-container {
-            max-width: 400px;
-            position: relative;
-        }
-        .search-wrapper {
-            max-width: 700px;
-            margin: 0 auto;
-            position: relative; /* Required for .dropdown to anchor */
-        }
-
-
+        /* Modern dropdown */
         ul.dropdown {
             position: absolute;
-            list-style: none;
-            top: 100%;
             left: 0;
             right: 0;
+            top: 105%;
+            list-style: none;
             background: white;
-            border: 1px solid #ccc;
-            border-radius: 10px;
-            border-top: none;
-            max-height: 200px;
+            border-radius: 12px;
+            max-height: 260px;
             overflow-y: auto;
-            z-index: 1000;
-            font-size: 1em;
-            color: #222;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            padding: 6px 0;
+            margin: 10px 0 0 0;
+            z-index: 50;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-8px);
+            transition: all 0.22s ease-in-out;
+        }
+
+        ul.dropdown.show {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
         }
 
         ul.dropdown li {
-            padding: 10px 15px;
-            background: white;
+            padding: 12px 18px;
             cursor: pointer;
-            border-bottom: 1px solid #eee;
+            transition: background 0.15s ease;
+            border-bottom: 1px solid #f0f0f0;
+            color: #1f1f1f;
+            font-weight: 600;
+            padding: 14px 20px;
+            font-size: 1.05em;
+        }
+
+        ul.dropdown li:last-child {
+            border-bottom: none;
         }
 
         ul.dropdown li:hover {
-            background-color: #f5f5f5;
+            background: #eef4ff;
+            /* color: #004A80;
+            font-weight: 700; */
         }
 
+        /* Search results */
+        #results {
+            max-width: 750px;
+            margin: 40px auto;
+        }
 
         .result {
-            border: 1px solid #ddd;
-            padding: 10px;
-            margin-top: 10px;
+            background: white;
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 14px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+            transition: all 0.2s ease-in-out;
+        }
+
+        .result:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 25px rgba(0,0,0,0.18);
+            background: #fbfdff;
+        }
+
+        .result strong {
+            display: block;
+            font-size: 1.2em;
+            margin-bottom: 8px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
+
 <body>
+
     <div class="header">
         <h1>SMA Online Service Center</h1>
+
         <div class="search-wrapper">
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="How can we help you?" />
                 <button onclick="submitQuery()">
                     <svg viewBox="0 0 24 24">
-                        <path d="M10,2A8,8 0 0,1 18,10C18,11.85 17.25,13.55 16,14.87L21.71,20.59L20.29,22L14.56,16.27C13.23,17.5 11.53,18.25 9.67,18.25A8,8 0 0,1 10,2M10,4A6,6 0 0,0 4,10A6,6 0 0,0 10,16A6,6 0 0,0 16,10A6,6 0 0,0 10,4Z" />
+                        <path d="M10,2A8,8 0 0,1 18,10C18,11.85 17.25,13.55 16,14.87L21.71,20.59L20.29,22L14.56,16.27C13.23,17.5 11.53,18.25 9.67,18.25A8,8 0 0,1 10,2M10,4A6,6 0 0,0 4,10A6,6 0 0,0 10,16A6,6 0 0,0 16,10A6,6 0 0,0 10,4Z"/>
                     </svg>
                 </button>
             </div>
+
             <ul id="dropdown" class="dropdown"></ul>
         </div>
     </div>
-    <div id="results" class="dropdown"></div>
+
+    <div id="results"></div>
+
 
     <script>
         let debounceTimer;
@@ -133,14 +198,17 @@
             const query = searchInput.value.trim();
 
             clearTimeout(debounceTimer);
+
             if (query.length < 3) {
+                dropdown.classList.remove("show");
                 dropdown.innerHTML = "";
                 return;
             }
 
-            debounceTimer = setTimeout(() => fetchSuggestions(query), 300);
+            debounceTimer = setTimeout(() => fetchSuggestions(query), 250);
         });
 
+        // Fetch suggestions
         async function fetchSuggestions(query) {
             try {
                 const res = await fetch("/api/suggest", {
@@ -152,36 +220,45 @@
                 const data = await res.json();
                 dropdown.innerHTML = "";
 
-                if (Array.isArray(data)) {
-                    data.forEach(item => {
-                        const li = document.createElement("li");
-                        li.textContent = item.label;
-                        li.onclick = () => {
-                            searchInput.value = item.label;
-                            dropdown.innerHTML = "";
-                            fetchResults(item.label, item.attribute);
-                        };
-                        dropdown.appendChild(li);
-                    });
+                // Data is already an array (we saw this in your console)
+                if (!Array.isArray(data) || data.length === 0) {
+                    dropdown.classList.remove("show");
+                    return;
                 }
+
+                // Show dropdown
+                dropdown.classList.add("show");
+
+                data.forEach(item => {
+                    const li = document.createElement("li");
+                    li.textContent = item.label;
+                    li.onclick = () => {
+                        searchInput.value = item.label;
+                        dropdown.classList.remove("show");
+                        fetchResults(item.label, item.attribute);
+                    };
+                    dropdown.appendChild(li);
+                });
+
             } catch (err) {
                 console.error("Suggest API Error:", err);
+                dropdown.classList.remove("show");
             }
         }
 
         function submitQuery() {
+            dropdown.classList.remove("show");
             dropdown.innerHTML = "";
             const query = searchInput.value.trim();
-            if (query.length >= 3) {
-                console.log("Sending search text:", query);
-                fetchResults(query);
-            }
+            if (query.length >= 3) fetchResults(query);
         }
 
         async function fetchResults(text, attribute = null) {
-            results.innerHTML = "Loading...";
+            results.innerHTML = "<p>Loading...</p>";
+            dropdown.classList.remove("show");
+
             try {
-                const body = attribute ? {text, attribute} : {text};
+                const body = attribute ? { text, attribute } : { text };
                 const res = await fetch("/api/search", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -191,11 +268,15 @@
                 const data = await res.json();
 
                 if (Array.isArray(data.results)) {
-                    results.innerHTML = data.results.slice(0, 5).map(item =>
-                        `<div class="result" onclick="openDownload('${item.id}')">
-                            <strong>${item.title}</strong>
-                            <p>${item.body}</p>
-                        </div>`).join("");
+                    results.innerHTML = data.results
+                        .slice(0, 6)
+                        .map(item => `
+                            <div class="result" onclick="openDownload('${encodeURIComponent(item.id)}')">
+                                <strong>${item.title}</strong>
+                                <p>${item.body.substring(0, 200)}...</p>
+                            </div>
+                        `)
+                        .join("");
                 } else {
                     results.innerHTML = "<p>No results found.</p>";
                 }
@@ -203,13 +284,13 @@
                 console.error("Search API Error:", err);
                 results.innerHTML = "<p style='color:red;'>Error fetching results.</p>";
             }
-
         }
-        function openDownload(id) {
-                window.location.href = `/view?id=${encodeURIComponent(id)}`;
-                console.log("Clicked:", id);
 
-            }
+        // Open in new tab
+        function openDownload(id) {
+            window.open(`/view?id=${id}`, "_blank");
+        }
     </script>
+
 </body>
 </html>

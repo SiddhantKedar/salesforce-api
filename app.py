@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect
 import requests
 from dotenv import load_dotenv
 import os
@@ -16,14 +16,14 @@ def index():
 @app.route("/api/suggest", methods=["POST"])
 def suggest():
     query = request.json.get("query", "")
-    url = "https://dev.api.mysma.de/staging/e-error-resolution/api/v1/suggest"
+    url = "https://prod.api.mysma.de/production/e-error-resolution/api/v1/suggest"
     headers = {
         "client_id": CLIENT_ID,
         "client_secret": CLIENT_SECRET,
         "Content-Type": "application/json"
     }
     try:
-        res = requests.post(url, headers=headers, json={"query": query, "language": "en"})
+        res = requests.post(url, headers=headers, json={"query": query, "limit": 5})
         return jsonify(res.json())
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -35,12 +35,21 @@ def search():
     attribute = data.get("attribute")
     payload = {
         "text": text,
-        "language": "en-US"
+        "filter" : {
+            "Language": "en",
+            "iirdsRole": "https://metadata.sma.com/iirds#10857875979",
+            "DocumentType": [
+            "Document",
+            "Topic",
+            "CustomDocumentType1"
+            ],
+        },
+        "limit" : 5
     }
 
     if attribute:
         payload["attribute"] = attribute
-    url = "https://dev.api.mysma.de/staging/e-error-resolution/api/v1/search"
+    url = "https://prod.api.mysma.de/production/e-error-resolution/api/v1/search"
     headers = {
         "client_id": CLIENT_ID,
         "client_secret": CLIENT_SECRET,
@@ -55,22 +64,23 @@ def search():
 
 @app.route("/view")
 def view():
-    id = request.args.get("id")
-    if not id:
-        return "Mising Id", 400
-    
-    try:
-        url = f"https://dev.api.mysma.de/staging/e-error-resolution/api/v1/{id}/download"
-        headers = {
-            "client_id": CLIENT_ID,
-            "client_secret": CLIENT_SECRET
-        }
-        res = requests.get(url, headers=headers, timeout=10)
-        res.encoding = "utf-8"
-        html = res.text
-        return html
-    except Exception as e:
-        return f"<h2> Error fetching document :</h2><pre>{str(e)}</pre>", 500
+    doc_id = request.args.get("id")
+    if not doc_id:
+        return "Missing id", 400
+
+    guest_token = os.getenv("GUEST_TOKEN")
+    if not guest_token:
+        return "Guest token missing in .env", 500
+
+    # Build final working Empolis link
+    empolis_url = (
+        f"https://esc-eu-central-1.empolisservices.com/gatekeeper/guesttokens/580/"
+        f"{guest_token}?app="
+        f"https://esc-eu-central-1.empolisservices.com/service-express/portal/project1_p/document/{doc_id}"
+    )
+
+    # Redirect user straight to the Empolis document
+    return redirect(empolis_url, code=302)
 
 
 if __name__ == "__main__":
