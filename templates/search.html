@@ -181,13 +181,171 @@
             padding: 30px 0;
         }
 
+        .summarize-btn {
+            margin-top: 10px;
+            margin-left: 15px;
+            padding: 6px 14px;
+            font-size: 0.9em;
+            font-weight: 600;
+            background-color: #004A80;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .summarize-btn:hover {
+            background-color: #00345c;
+        }
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        /* Background overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.55);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            animation: modalFadeIn 0.25s ease forwards;
+        }
+
+        /* Modal box */
+        .modal-box {
+            background: #fff;
+            width: 90%;
+            max-width: 550px;
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.2);
+            position: relative;
+            animation: modalSlideUp 0.3s ease forwards;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        /* Close button (X) */
+        .modal-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            border: none;
+            background: transparent;
+            font-size: 20px;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: 0.2s;
+        }
+
+        .modal-close:hover {
+            opacity: 1;
+        }
+
+        /* Modal text */
+        .modal-title {
+            margin-top: 0;
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #004A80;
+        }
+
+        .modal-content {
+            margin: 15px 0 25px 0;
+            white-space: pre-line;
+            font-size: 1em;
+            color: #444;
+            line-height: 1.5;
+        }
+
+        /* Buttons */
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .view-btn {
+            background-color: #004A80;
+            color: white;
+        }
+
+        .view-btn:hover {
+            background-color: #00345c;
+        }
+
+        .back-btn {
+            background-color: #cccccc;
+            color: #222;
+        }
+
+        .back-btn:hover {
+            background-color: #b9b9b9;
+        }
+
+        /* Animations */
+        @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        @keyframes modalSlideUp {
+            from { transform: translateY(40px); opacity: 0; }
+            to   { transform: translateY(0);   opacity: 1; }
+        }
+
+        .loader {
+            border: 4px solid #e0e7ff; /* light bluish-grey */
+            border-top: 4px solid #004A80; /* SMA blue */
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            margin: 25px auto;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            0%   { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }         
+        }
+
     </style>
 </head>
+
+<!-- Modal -->
+<div id="summaryModal" class="modal-overlay">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeModal()">✖</button>
+
+        <h2 class="modal-title">Summary</h2>
+
+        <div id="modalSummaryContent" class="modal-content">
+            <div class="loader"></div>
+        </div>
+
+        <div class="modal-actions">
+            <button id="modalViewBtn" class="modal-btn view-btn">View Document</button>
+            <button class="modal-btn back-btn" onclick="closeModal()">Back</button>
+        </div>
+    </div>
+</div>
+
 
 <body>
 
@@ -313,17 +471,27 @@
                                 <strong>${item.title}</strong>
                                 <p>${item.body.substring(0, 200)}...</p>
 
-                                <a 
-                                    href="/view?id=${encodeURIComponent(item.id)}"
-                                    target="_blank"
-                                    class="view-link"
-                                    onclick="event.stopPropagation();"
-                                >
-                                    🔗 View Document
-                                </a>
+                                <div class="actions">
+                                    <a 
+                                        href="/view?id=${encodeURIComponent(item.id)}"
+                                        target="_blank"
+                                        class="view-link"
+                                        onclick="event.stopPropagation();"
+                                    >
+                                        View Document
+                                    </a>
+
+                                    <button 
+                                        class="summarize-btn"
+                                        onclick="event.stopPropagation(); summarizeDoc('${encodeURIComponent(item.id)}')"
+                                    >
+                                        Summarize
+                                    </button>
+                                </div>
                             </div>
                         `)
                         .join("");
+
                 } else {
                     results.innerHTML = `<p class="no-results">No results found.</p>`;
                 }
@@ -337,6 +505,53 @@
         function openDownload(id) {
             window.open(`/view?id=${id}`, "_blank");
         }
+
+        async function summarizeDoc(id) {
+            const docId = decodeURIComponent(id);
+            openModal('<div class="loader"></div>', docId);
+
+            try {
+                const res = await fetch("/api/summarize", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: docId })
+                });
+
+                const data = await res.json();
+
+                if (data.error) {
+                    openModal("Error: " + data.error, docId);
+                    return;
+                }
+
+                openModal(data.summary, docId);
+            
+            } catch (err) {
+                openModal("Error summarizing document.", docId);
+            }
+        }
+
+        // Modal function
+        function openModal(summaryText, docId) {
+            const modal = document.getElementById("summaryModal");
+            const content = document.getElementById("modalSummaryContent");
+            const viewBtn = document.getElementById("modalViewBtn");
+
+            content.innerHTML = summaryText;
+            viewBtn.onclick = () => window.open(`/view?id=${docId}`, "_blank");
+
+            modal.style.display = "flex";
+        }
+
+        function closeModal() {
+            const modal = document.getElementById("summaryModal");
+            modal.style.display = "none";
+        }
+
+        // Close modal when pressing ESC
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") closeModal();
+        });
 
     </script>
 

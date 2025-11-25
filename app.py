@@ -8,6 +8,7 @@ app = Flask(__name__)
 load_dotenv()
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
+BEARER_TOKEN = os.getenv("BEARER_TOKEN")
 
 @app.route("/")
 def index():
@@ -81,6 +82,64 @@ def view():
 
     # Redirect user straight to the Empolis document
     return redirect(empolis_url, code=302)
+
+@app.route("/api/summarize", methods=["POST"])
+def summarize():
+    data = request.json
+    doc_id = data.get("id")
+
+    if not doc_id:
+        return jsonify({"error": "Missing document id"}), 400
+
+    try:
+        token = os.getenv("BEARER_TOKEN")
+        if not token:
+            return jsonify({"error": "Bearer token missing in .env"}), 500
+
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/json"
+        }
+        # Plain text
+        text_url = (
+            f"https://esc-eu-central-1.empolisservices.com/service-express/"
+            f"api/v1/environments/project1_p/documents/{doc_id}/text"
+        )
+
+        text_res = requests.get(text_url, headers=headers)
+        if text_res.status_code == 401:
+            return jsonify({"error": "Bearer token expired"}), 401
+        
+        text_json = text_res.json()
+
+        content_blocks = text_json.get("content", [])
+        full_text = "\n".join(content_blocks)
+
+        if not full_text.strip():
+            return jsonify({"error": "Document contains no text"}), 500
+
+        # Custom Summarizer
+        summarize_url = (
+            "https://esc-eu-central-1.empolisservices.com/api/rag/0.1/"
+            "functions/sma.summarizer.v1/invoke"
+        )
+
+        sum_res = requests.post(
+            summarize_url, 
+            json={"text": full_text},
+            headers=headers
+        )
+        if sum_res.status_code == 401:
+            return jsonify({"error": "Bearer token expired"}), 401
+        
+        sum_json = sum_res.json()
+
+        summary_text = sum_json.get("text")
+
+        return jsonify({"summary": summary_text})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
