@@ -470,8 +470,6 @@
                             <div class="result" onclick="openDownload('${encodeURIComponent(item.id)}')">
                                 <strong>${item.title}</strong>
                                 <p>${item.body.substring(0, 200)}...</p>
-
-<<<<<<< HEAD
                                 <div class="actions">
                                     <a 
                                         href="/view?id=${encodeURIComponent(item.id)}"
@@ -489,16 +487,6 @@
                                         Summarize
                                     </button>
                                 </div>
-=======
-                                <a 
-                                    href="/view?id=${encodeURIComponent(item.id)}"
-                                    target="_blank"
-                                    class="view-link"
-                                    onclick="event.stopPropagation();"
-                                >
-                                    View Document
-                                </a>
->>>>>>> c5c61938d260b8c769c5e21450d4c9bfea4d32bf
                             </div>
                         `)
                         .join("");
